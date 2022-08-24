@@ -20,7 +20,7 @@
 
 ## 2.Background
 
-![image-20220823201755013](images/image-20220823201755013.png)
+![image-20220823201755013](./../images/image-20220823201755013.png)
 
 ​	给定数据分布$q(x_0)$的样本，我们有兴趣学习近似于$q(x_0)$且易于采样的模型分布$p_\theta(x_0)$。去噪扩散概率模型(DDPMsSohl-Dickstein等人(2015)；Ho等人(2020)）是以下形式的潜在变量模型：
 $$
@@ -160,7 +160,7 @@ $$
 $$
 `其中$\eta\in\R_{\geq0}$是我们可以直接控制的超参数。这包括$\eta=1$使得原始DDPM生成过程和$\eta=0$时的DDIM。我们还考虑了DDPM，其中随机噪声的标准偏差大于$\sigma(1)$，我们将其表示为$\hat{\sigma}:\hat{\sigma}_{\cal T_i}=\sqrt{1-\alpha_{\cal T_i}/\alpha_{\cal T_{i-1}}}$。Ho等人（2020）中的实现仅用于获取CIFAR10样本，而不是其他数据集的样本。我们在附录D中包含更多详细信息。 
 
-![image-20220824110239321](images/image-20220824110239321.png)
+![image-20220824110239321](./../images/image-20220824110239321.png)
 
 ### 5.1 SAMPLE QUALITY AND EFFICIENCY
 

@@ -94,7 +94,7 @@ x_{t-1}=m\bigodot x_{t-1}^{known}+(1-m)\bigodot x_{t-1}^{unknown}\qquad(8c)
 $$
 ​	因此，$x_{t-1}^{known}$使用给定图像$m\bigodot x_0$中的已知像素进行采样，而$x_{t-1}^{unknown}$则在给定上一次迭代$x_t$的情况下从模型中进行采样。然后使用掩码将它们组合到新的样本$x_{t-1}$中。我们的方法如图2所示。
 
-<img src="./images/image-20220823154449648.png" alt="image-20220823154449648" style="zoom:80%;" />
+<img src="./../images/image-20220823154449648.png" alt="image-20220823154449648" style="zoom:80%;" />
 
 ### 4.2 Resampling（重采样）
 
