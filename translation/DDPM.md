@@ -30,7 +30,7 @@ $$
 $$
 \mathbb{E}[-\log p_\theta(x_0)]\leq\mathbb{E}_q\Bigg[-\log\frac{p_\theta(x_{0:T})}{q(x_{1:T}|x_0)}\Bigg]=\mathbb{E}_q\Bigg[-\log p(x_T)-\sum_{t\geq1}\log \frac{p_\theta(x|_{t-1}|x_t)}{q(x_t|x_{t-1})}\Bigg]=:L\qquad(3)
 $$
-​	前向过程方差$\beta_t$可以通过重参数化[33]来学习，或者作为超参数保持为常数，并且反向过程的表达性部分通过选择$p_\theta(x_{t-1}|x_t)$中的高斯条件来保证，因为当$\beta_t$很小时，两个过程具有相同的函数形式[53]。正向过程的一个显著特性是，它允许在任意时间步长$t$以闭合形式对$x_t$进行采样：使用符号$\alpha_t:=1-\beta_t$和$\hat{\alpha}_t:=\prod_{s=1}^t\alpha_s$，我们有：
+​	前向过程方差$\beta_t$可以通过重参数化[33]来学习，或者作为超参数保持为常数，并且反向过程的表达性部分通过选择$p_\theta(x_{t-1}|x_t)$中的高斯条件来保证，因为当$\beta_t$很小时，两个过程具有相同的函数形式[53]。正向过程的一个显著特性是，它允许在任意时间步长$t$以闭合形式对$x_t$进行采样：使用符号$\alpha_t:=1-\beta_t$和$\overline{\alpha}_t:=\prod_{s=1}^t\alpha_s$，我们有：
 $$
 q(x_t|x_0)={\cal N}(x_t;\sqrt{\overline{\alpha}_t}x_0,(1-\overline{\alpha}_t)\pmb I)\qquad(4)
 $$

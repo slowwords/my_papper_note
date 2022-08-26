@@ -26,35 +26,35 @@
 $$
 p_\theta(x_0)=\int p_\theta(x_{0:T})dx_{1:T},\quad 其中\quad p_\theta(x_{0:T}):=p_\theta(x_T)\prod_{t=1}^Tp_{\theta}^{(t)}(x_{t-1}|x_t)\qquad(1)
 $$
-​	其中$x_1,...x_T$是与$x_0$（表示为$\chi$）相同样本空间中的潜在变量。通过最大化变分下限，学习参数$\theta$以拟合数据分布$q(x_0)$：
+​	其中$x_1,...x_T$是与$x_0$（表示为$\chi$）相同样本空间中的潜在变量。通过最大化变分==下界==<font color='red'>（论文里写的是下界，我认为应该是笔误，这里要最大化变分上界）</font>，学习参数$\theta$以拟合数据分布$q(x_0)$：
 $$
 \max_\theta E_{q(x_0)}[\log p_\theta(x_0)]\leq \max_\theta E_{q(x_0,x_1,...,x_T)}[\log p_\theta(x_{0:T})-\log q(x_{1:T}|x_0)]\qquad(2)
 $$
-​	其中$q(x_{1:T}|x_0)$是潜在变量上的某种推理分布。与典型的潜在变量模型（如变分自动编码器（Rezende等人，2014））不同，DDPM是用固定（而非可训练）推理过程$q(x_{1:T}|x_0)$学习的，潜在变量是相对高维的。例如，Ho等人（2020）考虑了以下具有高斯变换的马尔科夫链，其由递减序列$\alpha_{1:T}\in(0,1]^T$​参数化:
+​	其中$q(x_{1:T}|x_0)$是潜在变量上的某种推理分布。与典型的潜在变量模型（如变分自动编码器（Rezende等人，2014））不同，DDPM是用固定（而非可训练）推理<font color='red'>（感觉这里应该是扩散过程）</font>过程$q(x_{1:T}|x_0)$学习的，潜在变量是相对高维的。例如，Ho等人（2020）考虑了以下具有高斯变换的马尔科夫链，其由递减序列$\alpha_{1:T}\in(0,1]^T$参数化:
 $$
 q(x_{1:T}|x_0):=\prod_{t=1}^Tq(x_t|x_{t-1})\quad其中\quad q(x_t|x_{t-1}):={\cal N}\Bigg(\sqrt{\frac{\alpha_t}{\alpha_{t-1}}}x_{t-1},\Big(1-\frac{\alpha_t}{\alpha_{t-1}}\Big)\pmb{I}\Bigg)\qquad(3)
 $$
-​	其中确保协方差矩阵在其对角线上具有正相。由于采样过程（从$x_0$到$x_T$）的自回归性质，这被称为正向过程。我们将潜在变量模型$p_\theta(x_{0:T})$称为生成过程，因为它近似于难以处理的正向过程$q(x_{t-1}|x_t)$。直观的说，正向过程逐渐将噪声添加到观测$x_0$，而生成过程逐渐消除噪声观测（图1左图）。
+​	其中必须确保协方差矩阵<font color='red'>（对角线上的元素为各个随机变量的方差，非对角线上的元素为两两随机变量之间的协方差）</font>在其对角线上具有正项。由于采样过程（从$x_0$到$x_T$）的自回归性质，这被称为正向过程。我们将潜在变量模型$p_\theta(x_{0:T})$称为生成过程，因为它近似于难以处理的反向过程$q(x_{t-1}|x_t)$。直观的说，正向过程逐渐将噪声添加到观测$x_0$，而生成过程逐渐消除噪声观测（图1左图）。
 
 ​	正向过程的一个特殊特性是： 
 $$
 q(x_t|x_0):=\int q(x_{1:t}|x_0)dx_{1:(t-1)}={\cal N}(x_t;\sqrt{\alpha_t}x_0,(1-\alpha_t)\pmb{I});
 $$
-​	因此，我们可以将$x_t$表示维$x_0$和噪声变量$\epsilon$的线性组合：
+​	因此，我们可以将$x_t$表示为$x_0$和噪声变量$\epsilon$的线性组合：
 $$
 x_t=\sqrt{\alpha_t}x_0+\sqrt{1-\alpha_t}\epsilon,\quad其中\quad\epsilon\sim {\cal N}(\pmb 0, \pmb I)\qquad(4)
 $$
-​	当我们将$\alpha_T$设置为足够接近0时，对于所有$x_0$,$q(x_T|x_0)$收敛到标准高斯，因此自然设置$p_\theta(x_T):=N(\pmb 0, \pmb I)$。如果将所有条件建模为具有可训练均值函数和固定方差的高斯函数，则等式(2)中的目标可以简化为：
+​	当我们将$\alpha_T$设置为足够接近0时，对于所有$x_0$，$q(x_T|x_0)$收敛到标准高斯，因此自然设置$p_\theta(x_T):={\cal N}(\pmb 0, \pmb I)$。如果将所有条件建模为具有可训练均值函数和固定方差的高斯函数，则等式(2)中的目标可以简化为：
 $$
 L_\gamma(\epsilon_\theta):=\sum_{t=1}^T\gamma_tE_{x_0\sim q(x_0),\epsilon_t\sim {\cal N}(\pmb 0,\pmb I)}[||\epsilon_\theta ^{(t)}(\sqrt{\alpha_t}x_0+\sqrt{1-\alpha_t }\epsilon_t)-\epsilon_t||^2_2]\qquad(5)
 $$
-​	其中$\epsilon_\theta:=\{\epsilon_\theta ^{(t)} \}_{t=1}^T$是一组$T$函数，每个$\epsilon_\theta ^{(t)}:\chi\rightarrow\chi$（由$t$索引）是具有可训练参数$\theta^{(t)}$的函数，$\gamma:=[\gamma_1,...,\gamma_T]$ 是目标中依赖于$\alpha_{1:T}$的正系数向量。在Ho等人（2020）中，$\gamma=1$的目标被优化，以最大化训练模型的生成能力；这也是基于分数匹配（Hyvärinen,2005;Vincent,2011）的噪声条件分数网络（Song&Ermon）中使用的相同目标。从训练模型中，首先从先验$p_\theta(x_T)$中采样$x_T$，然后从生成过程中迭代采样$x_{t-1}$，最后得到$x_0$。
+​	其中$\epsilon_\theta:=\{\epsilon_\theta ^{(t)} \}_{t=1}^T$是一组$T$函数，每个$\epsilon_\theta ^{(t)}:\chi\rightarrow\chi$（由$t$索引）是具有可训练参数$\theta^{(t)}$的函数，$\gamma:=[\gamma_1,...,\gamma_T]$ 是目标中依赖于$\alpha_{1:T}$的正系数向量。在Ho等人（2020）中，$\gamma=1$的目标被优化，以最大化训练模型的生成能力；这也是基于分数匹配（Hyvärinen,2005;Vincent,2011）的噪声条件分数网络（Song&Ermon,2019）中使用的相同目标。从训练模型中，首先从先验$p_\theta(x_T)$中采样$x_T$，然后从生成过程中迭代采样$x_{t-1}$，最后得到$x_0$。
 
-​	正向过程的长度$T$是DDPMs中的一个重要超参数。从变分的角度来看，较大的$T$允许反向过程接近高斯（Sohl-Dickstein等人，2015），因此用高斯条件分布建模的生成过程成为良好的近似；这促使人们选择大的$T$值，如Ho等人（2020）中的$T=1000$。然而，由于所有T次迭代都必须顺序执行，而不是并行执行，以获得样本$x_0$，因此，从DDPM进行的采样要比从其他深度生成模型进行的采样慢得多，这使得它们对于计算有限且延迟非常关键的任务来说不切实际。
+​	正向过程的长度$T$是DDPMs中的一个重要超参数。从变分的角度来看，较大的$T$允许反向过程接近高斯（Sohl-Dickstein等人，2015），因此用高斯条件分布建模的生成过程是一个很好的近似值；这促使人们选择大的$T$值，如Ho等人（2020）中的$T=1000$。然而，由于所有$T$次迭代都必须顺序执行，而不是并行执行，以获得样本$x_0$，因此，从DDPM进行的采样要比从其他深度生成模型进行的采样慢得多，这使得它们对于计算有限且延迟非常关键的任务来说不切实际。
 
-## 3.VARIATIONAL INFERENCE FOR NON-MARKOVIAN FORWARD PROCESSES(非马尔科夫正演变的变分推理)
+## 3.VARIATIONAL INFERENCE FOR NON-MARKOVIAN FORWARD PROCESSES(非马尔科夫正向过程的变分推理)
 
-​	由于生成模型近似于推理过程的反向过程，我们需要重新思考推理过程，以减少生成模型所需要的迭代次数。我们的主要发现是，$L_\gamma$形式的DDPM目标仅取决于边缘分布$q(x_t|x_0)$，而不取决于联合分布$q(x_{1:T}|x_0)$。由于存在许多具有相同边缘分布的推理分布（联合分布），我们探索了非马尔科夫的替代推理过程，这导致了新的生成过程（图1，右侧）。这些非马尔可夫推理过程导致于DDPM相同的代理目标函数，如下所示。在附录A中，我们证明了非马尔科夫视角也适用于高斯情形以外的情形。
+​	由于生成模型近似于==推理过程的反向过程==<font color='red'>(近似于DDPM扩散过程的反向过程）</font>，我们需要重新思考推理过程，以减少生成模型所需要的迭代次数。我们的主要发现是，$L_\gamma$形式的<font color='cornflowerblue'>DDPM目标仅取决于边缘分布</font>$q(x_t|x_0)$，<font color='cornflowerblue'>而不取决于联合分布</font>$q(x_{1:T}|x_0)$。由于存在许多具有相同边缘分布的推理分布（联合分布），我们探索了非马尔科夫的替代推理过程，这导致了新的生成过程（图1，右侧）。这些非马尔可夫推理过程导致与DDPM相同的代理目标函数，如下所示。在附录A中，我们证明了非马尔科夫视角也适用于高斯情形以外的情形。
 
 ### 3.1 NON-MARKOVIAN FORWARD PROCESSES（非马尔科夫链的前向过程）
 
@@ -62,7 +62,7 @@ $$
 $$
 q_\sigma(x_{1:T}|x_0):=q_\sigma(x_T|x_0)\prod_{t=2}^Tq_\sigma(x_{t-1}|x_t,x_0)\qquad(6)
 $$
-​	其中$q_\sigma(x_T|x_0)=\cal N(\sqrt{\alpha_T}x_0,(1-\alpha_T)\pmb I)$，并且所有$t>1$，
+​	其中$q_\sigma(x_T|x_0)={\cal N}(\sqrt{\alpha_T}x_0,(1-\alpha_T)\pmb I)$，并且所有$t>1$，
 $$
 q_\sigma(x_{t-1}|x_t,x_0)={\cal N}(\sqrt{\alpha_t-1}x_0+\sqrt{1-\alpha_{t-1}-\sigma_t^2}\cdot\frac{x_t-\sqrt{\alpha_t}x_0}{\sqrt{1-\alpha_t}},\sigma_t^2\pmb I)\qquad(7)
 $$
@@ -70,9 +70,9 @@ $$
 $$
 q_\sigma(x_t|x_{t-1},x_0)=\frac{q_\sigma(x_{t-1}|x_t,x_0)q_\sigma(x_t|x_0)}{q_\sigma(x_{t-1}|x_0)},\qquad(8)
 $$
-​	这也是高斯的（尽管我们在本文的其余部分不使用这一事实）。与等式(3)中的扩散过程不同，这里的正向过程不再是马尔可夫过程，因为每个$x_t$可能同时依赖于$x_{t-1}$和$x_0$。$\sigma$的大小控制正向过程的随机性：当$\sigma\rightarrow \pmb0$，我们达到了一个极端情况，只要我们观察$x_0$和$x_t$的某个$t$，那么$x_{t-1}$就变得已知和固定。
+​	这也是高斯的（尽管我们在本文的其余部分不使用这一事实）。<font color='red'>与等式(3)中的扩散过程不同，这里的正向过程不再是马尔可夫过程</font>，因为==每个$x_t$可能同时依赖于$x_{t-1}$和$x_0$==。$\sigma$的大小控制正向过程的随机性：当$\sigma\rightarrow \pmb0$，我们达到了一个极端情况，只要我们观察$x_0$和$x_t$的某个$t$，那么$x_{t-1}$就变得已知和固定。
 
-### 3.2 GENERATIVE PROCESS AND UNIFIED VARIATIONAL INFERENCE OBJECTIVE（生成过程与同意变分推理目标）
+### 3.2 GENERATIVE PROCESS AND UNIFIED VARIATIONAL INFERENCE OBJECTIVE（生成过程与统一变分推理目标）
 
 ​	接下来，我们定义了一个可训练的生成过程$p_\theta(x_{0:T})$，其中每个$p_\theta^{(t)}(x_{t-1}|x_t)$利用$q_\sigma(x_{t-1}|x_t,x_0)$的知识。直观地说，给定一个噪声观测$x_t$，我们首先对相应的$x_0$进行观测，然后使用它通过反向条件分布$q_\sigma(x_{t-1}|x_t,x_0)$来获得样本$x_{t-1}$，这是我们已经定义的。
 
@@ -90,19 +90,19 @@ $$
 
 ​	我们通过以下变分推理目标优化$\theta$（它是$\epsilon_\theta$​上的函数）：
 $$
-J_\sigma(\epsilon_\theta):=\mathbb{E}_{x_{0:T}\sim q_\sigma(x_{0:T})[\log q_\sigma(x_{1:T}|x_0)-\log p_\theta(x_{0:T})]}\\=\mathbb{E}_{x_{0:T}\sim q_\sigma(x_{0:T})[\log q_\sigma(x_T|x_0)+\sum_{t=2}^{T}\log q_\sigma(x_{t-1}|x_t,x_0)-\sum_{t=1}^T\log p_\theta^{(t)}(x_{t-1}|x_t)-\log p_\theta(x_T)]}\qquad(11)
+J_\sigma(\epsilon_\theta):=\mathbb{E}_{x_{0:T}\sim q_\sigma(x_{0:T})}\Big[\log q_\sigma(x_{1:T}|x_0)-\log p_\theta(x_{0:T})\Big]\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\\=\mathbb{E}_{x_{0:T}\sim q_\sigma(x_{0:T})}\Bigg[\log q_\sigma(x_T|x_0)+\sum_{t=2}^{T}\log q_\sigma(x_{t-1}|x_t,x_0)-\sum_{t=1}^T\log p_\theta^{(t)}(x_{t-1}|x_t)-\log p_\theta(x_T)\Bigg]\qquad(11)
 $$
-​	其中，我们根据等式(6)分解$q_\theta(x_{1:T}|x_0)$，根据等式(1)分解$p_\theta(x_{0:T})$。
+​	其中，我们根据等式(6)分解$q_\sigma(x_{1:T}|x_0)$，根据等式(1)分解$p_\theta(x_{0:T})$。
 
 ​	从$J_\sigma$的定义来看，似乎必须为$\sigma$的每个选择训练不同的模型，因为它对应于不同的变分目标和不同的生成过程。然而对于某些权重$\gamma$，$J_\sigma$等于$L_\gamma$​，如下所示。
 $$
-定理1.对于所有\sigma>0，存在\gamma\in\R_{>0}^T和C\in\R，使得J_\sigma=L_\gamma+C
+\pmb{定理1.}对于所有\sigma>0，存在\gamma\in\R_{>0}^T和C\in\R，使得J_\sigma=L_\gamma+C
 $$
-​	变分目标$L_\gamma$是特殊的，因为如果模型$\epsilon_\theta^{(t)}$的参数$\theta$不在不同的$t$之间共享，那么$\epsilon_\theta$的最优解将不依赖于权重$\gamma$（因为通过分别最大化总和中的每个项来实现全局最优）。$L_\gamma$的这个性质由两个含义。一方面，这证明使用$L_1$作为DDPMs中变分下线的替代目标函数是合理的；另一方面，由于$J_\sigma$等价于定理1中的某个$L_\gamma$，因此$J_\sigma$的最优解也与$L_1$的最优解相同。因此，如果模型$\epsilon_\theta$中的参数在$t$之间不共享，那么Ho等人（2020）使用的$L_1$目标也可以用作变分目标$J_\sigma$的替代目标。
+​	变分目标$L_\gamma$是特殊的，因为如果模型$\epsilon_\theta^{(t)}$的参数$\theta$不在不同的$t$之间共享，那么$\epsilon_\theta$的最优解将不依赖于权重$\gamma$（因为通过分别最大化总和中的每个项来实现全局最优）。$L_\gamma$的这个性质由两个含义。一方面，这证明==使用$L_1$作为DDPMs中变分下线的替代目标函数是合理的==；另一方面，==由于$J_\sigma$等价于定理1中的某个$L_\gamma$，因此$J_\sigma$的最优解也与$L_1$的最优解相同==。因此，如果模型$\epsilon_\theta$中的参数在$t$之间不共享，那么Ho等人（2020）使用的$L_1$目标也可以用作变分目标$J_\sigma$的替代目标。
 
 ## 4.SAMPLING FROM GENERALIZED GENERATIVE PROCESSES（广义生成过程的抽样）
 
-​	以$L_1$为目标，我们不仅学习了Sohl-Dickstein等人（2015）和Ho等人（2020）中考虑的马尔可夫推理过程的生成过程，还学习了我们所描述的由$\sigma$参数化的许多非马尔科夫正向过程的生成过程。因此，我们基本上使用预训练的DDPM模型作为新目标的解决方案，并通过改变$\sigma$，专注于寻找一个更适合于根据我们的需要生成样本的生成过程。<img src="images/image-20220824091051054.png" alt="image-20220824091051054" style="zoom: 67%;" />
+​	以$L_1$为目标，我们不仅学习了Sohl-Dickstein等人（2015）和Ho等人（2020）中考虑的马尔可夫推理过程的生成过程，还学习了我们所描述的由$\sigma$参数化的许多非马尔科夫正向过程的生成过程。因此，我们基本上使用预训练的DDPM模型作为新目标的解决方案，并通过改变$\sigma$，专注于寻找一个更适合于根据我们的需要生成样本的生成过程。<img src="../images/image-20220824091051054.png" alt="image-20220824091051054" style="zoom: 67%;" />
 
 ### 4.1 DENOISING DIFFUSION IMPLICIT MODELS（扩散隐式模型的去噪）
 
@@ -110,17 +110,17 @@ $$
 $$
 x_{t-1}=\sqrt{\alpha_t-1}\Bigg(\underbrace{\frac{x_t-\sqrt{1-\alpha_t}\epsilon_\theta^{(t)}(x_t)}{\sqrt{\alpha_t}}}_{^"预测x_0^"} \Bigg)+\underbrace{\sqrt{1-\alpha_{t-1}-\sigma_t^2}\cdot\epsilon_\theta^{(t)}(x_t)}_{^"指向x_t的方向^"}+\underbrace{\sigma_t\epsilon_t}_{随机噪声}\qquad(12)
 $$
-​	其中$\epsilon_t\sim {\cal N}(\pmb0,\pmb I)$是与$x_t$无关的标准高斯噪声，我们定义$\alpha_0:=1$。即使使用相同的模型$\epsilon_\theta$，$\sigma$值的不同选择也会导致不同的生成过程，因此，重新训练模型是不必要的。
+​	其中$\epsilon_t\sim {\cal N}(\pmb0,\pmb I)$是与$x_t$无关的标准高斯噪声，我们定义$\alpha_0:=1$。==即使使用相同的模型$\epsilon_\theta$，$\sigma$值的不同选择也会导致不同的生成过程，因此，重新训练模型是不必要的。==
 
 ​	对于所有的$t$，当$\sigma_t=\sqrt{(1-\alpha_{t-1})/(1-\alpha_t)}\sqrt{1-\alpha_t/\alpha_{t-1}}$，正向过程变为马尔科夫过程，生成过程变为DDPM。
 
-​	我们注意到另一种特殊情况，当对于所有的$t$，$\sigma_t=0$时；在给定$x_{t-1}$和$x_0$时，正向过程变为确定性过程，但当$t=1$时除外；在生成过程中，随机噪声之前的系数$\epsilon_t$变为0。所得模型为隐式概率模型（Mohamed&Lakshminarayanan，2016），其中样本时通过固定程序（从$x_T$到$x_0$）从潜在变量生成的。我们将其命名为去噪扩散隐式模型（DDIM），因为他是一种以DDPM为目标训练的隐式概率模型（尽管正向过程不再是扩散）。
+​	我们注意到另一种特殊情况，==当对于所有的$t$，$\sigma_t=0$时；在给定$x_{t-1}$和$x_0$时，正向过程变为确定性过程，但当$t=1$时除外；在生成过程中，随机噪声之前的系数$\epsilon_t$变为0。所得模型为隐式概率模型（Mohamed&Lakshminarayanan，2016），其中样本是通过固定程序（从$x_T$到$x_0$）从潜在变量生成的==。我们将其命名为去噪扩散隐式模型（DDIM），因为他是一种以DDPM为目标训练的隐式概率模型（尽管正向过程不再是扩散）。
 
 ### 4.2 ACCELERATED GENERATION PROCESSES（加速生成过程）
 
-​	在前面的章节中，生成过程被视为反向过程的近似；由于正向过程有T个步骤，生成过程也被迫采样T个步骤。然而，由于去噪目标$L_1$不依赖于特定的正向过程，只要$q_\sigma(x_t|x_0)$是固定的，我们也可以考虑小于$T$的正向过程。
+​	在前面的章节中，生成过程被视为反向过程的近似；由于正向过程有$T$个步骤，生成过程也被迫采样$T$个步骤。然而，由于去噪目标$L_1$不依赖于特定的正向过程，只要$q_\sigma(x_t|x_0)$是固定的，我们也可以考虑小于$T$的正向过程。这可以加速相应的生成过程，而无需训练不同的模型。
 
-​	让我们考虑不是在所有潜在变量$x_{1:T}$上定义的正向过程，而是在子集$\{x_{{\cal T}_1},...,x_{{\cal T}_s}\}$上定义的，其中$\cal T$是长度为$\cal S$的$[1,...,T]$的递增子序列。特别是，我们定义了在$x_{{\cal T}_1},...,x_{{\cal T}_s}$上的顺序正向过程，使得$q(x_{\cal T_i}|x_0)={\cal N}(\sqrt{\alpha_{\cal T_i}}x_0,(1-\alpha_{\cal  T_i})\pmb I)$与“边缘分布”匹配（见图2）。生成过程现在根据反向$(\cal T)$对潜在变量进行采样，我们称之为（采样）轨迹。当采样轨迹的长度小于$T$时，由于采样过程的迭代性质，我们可以显著提高计算效率。
+​	让我们考虑不是在所有潜在变量$x_{1:T}$上定义，而是在其子集$\{x_{{\cal T}_1},...,x_{{\cal T}_s}\}$上定义的的正向过程，其中$\cal T$是长度为$\cal S$的$[1,...,T]$的递增子序列。特别是，我们定义了在$x_{{\cal T}_1},...,x_{{\cal T}_s}$上的顺序正向过程，使得$q(x_{\cal T_i}|x_0)={\cal N}(\sqrt{\alpha_{\cal T_i}}x_0,(1-\alpha_{\cal  T_i})\pmb I)$与“边缘分布”匹配（见图2）。生成过程现在根据反向$(\cal T)$对潜在变量进行采样，我们称之为（采样）轨迹。当采样轨迹的长度小于$T$时，由于采样过程的迭代性质，我们可以显著提高计算效率。
 
 ​	使用与第3节中类似的参数，我们可以证明使用$L_1$目标训练的模型是合理的，因此在训练中不需要改变。我们表明，仅需对等式(12)中的更新进行轻微修改即可获得新的、更快的生成过程，这适用于DDPM、DDIM以及等式(10)中考虑的所有生成过程。我们在附录C.1中包含了这些细节。
 
