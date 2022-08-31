@@ -100,7 +100,7 @@ $$
 $$
 ​	变分目标$L_\gamma$是特殊的，因为如果模型$\epsilon_\theta^{(t)}$的参数$\theta$不在不同的$t$之间共享，那么$\epsilon_\theta$的最优解将不依赖于权重$\gamma$（因为通过分别最大化总和中的每个项来实现全局最优）。$L_\gamma$的这个性质由两个含义。一方面，这证明==使用$L_1$作为DDPMs中变分下线的替代目标函数是合理的==；另一方面，==由于$J_\sigma$等价于定理1中的某个$L_\gamma$，因此$J_\sigma$的最优解也与$L_1$的最优解相同==。因此，如果模型$\epsilon_\theta$中的参数在$t$之间不共享，那么Ho等人（2020）使用的$L_1$目标也可以用作变分目标$J_\sigma$的替代目标。
 
-## 4.SAMPLING FROM GENERALIZED GENERATIVE PROCESSES（广义生成过程的抽样）
+## 4.SAMPLING FROM GENERALIZED GENERATIVE PROCESSES（广义生成过程的采样）
 
 ​	以$L_1$为目标，我们不仅学习了Sohl-Dickstein等人（2015）和Ho等人（2020）中考虑的马尔可夫推理过程的生成过程，还学习了我们所描述的由$\sigma$参数化的许多非马尔科夫正向过程的生成过程。因此，我们基本上使用预训练的DDPM模型作为新目标的解决方案，并通过改变$\sigma$，专注于寻找一个更适合于根据我们的需要生成样本的生成过程。<img src="../images/image-20220824091051054.png" alt="image-20220824091051054" style="zoom: 67%;" />
 
